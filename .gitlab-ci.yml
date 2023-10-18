@@ -1,0 +1,98 @@
+# ---------------------------------------------------------------------------
+# QO
+# ---------------------------------------------------------------------------
+
+build_debug:
+    script: 
+        - mkdir -p build
+        - cd build
+        - cmake -DCMAKE_BUILD_TYPE=Debug -GNinja ..
+        - ninja
+    tags:
+        - "ninja"
+        - "cmake"
+    artifacts:
+        paths:
+            - ./build/tester
+            - ./build/AdminTool
+        expire_in: 1 hrs
+
+build_release:
+    script:
+        - mkdir -p buildrel
+        - cd buildrel
+        - cmake -DCMAKE_BUILD_TYPE=Release -GNinja ..
+        - ninja
+    tags:
+        - "ninja"
+        - "cmake"
+    artifacts:
+        paths:
+            - ./buildrel/AdminTool
+        expire_in: 1 hrs
+
+test_submit:
+    needs:
+        - build_release
+    script:
+        - /opt/data/qo/submitter.py /opt/data/qo/submission.socket ./buildrel/AdminTool > submissionresult.txt
+    artifacts:
+        paths:
+            - submissionresult.txt
+        expire_in: 1 hrs
+    dependencies:
+        - build_release
+
+unit1:
+    allow_failure: true
+    needs:
+        - build_debug
+    script:
+        - ./build/tester task1
+    dependencies:
+        - build_debug
+
+unit2:
+    allow_failure: true
+    needs:
+        - build_debug
+    script:
+        - ./build/tester task2
+    dependencies:
+        - build_debug
+
+unit3:
+    allow_failure: true
+    needs:
+        - build_debug
+    script:
+        - ./build/tester task3
+    dependencies:
+        - build_debug
+
+unit4:
+    allow_failure: true
+    needs:
+        - build_debug
+    script:
+        - ./build/tester task4
+    dependencies:
+        - build_debug
+
+unit5:
+    allow_failure: true
+    needs:
+        - build_debug
+    script:
+        - ./build/tester task5
+    dependencies:
+        - build_debug
+
+homework_check:
+    needs:
+        - test_submit
+    script:
+        - cat submissionresult.txt
+        - grep -q 'Perfect grade' submissionresult.txt
+    dependencies:
+        - test_submit
